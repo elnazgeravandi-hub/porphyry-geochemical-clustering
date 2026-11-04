@@ -40,6 +40,8 @@ def test_reporting_cli_exports_computed_figures(tmp_path,monkeypatch):
     for algorithm in ['kmeans','dbscan','optics']:
         for method in ['baseline','mopso','nsga2']:
             pd.DataFrame({'sample_id':data.sample_id,'cluster':np.arange(100)%3}).to_csv(folder/f'{algorithm}_{method}_labels.csv',index=False)
+    import hashlib,json
+    (folder/'run_manifest.json').write_text(json.dumps({'input_sha256':hashlib.sha256(path.read_bytes()).hexdigest()}))
     out=tmp_path/'report'
     monkeypatch.setattr(sys,'argv',['reporting','--input',str(path),'--labels-dir',str(folder),'--output',str(out)])
     main()
