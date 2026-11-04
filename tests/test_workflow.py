@@ -45,7 +45,7 @@ def test_end_to_end_nine_configurations(tmp_path):
     cfg={'units':{'Cu':'ppm','Au':'ppb','Mo':'ppm','Bi':'ppm','Pb':'ppm','Zn':'ppm'},
          'methods':['kmeans','dbscan','optics'],'k_values':[3],'seeds':[42],
          'population':4,'generations':1,'silhouette_subset_size':100,'baseline_n_init':3,
-         'expected_samples':150,'dbcv':False}
+         'expected_samples':150,'dbcv':True}
     config=tmp_path/'test.json'; config.write_text(json.dumps(cfg))
     run(input_path,config,tmp_path/'out')
     summary=pd.read_csv(tmp_path/'out'/'validation_summary.csv')
@@ -53,6 +53,16 @@ def test_end_to_end_nine_configurations(tmp_path):
     assert len(summary)==9
     assert summary.SI.dropna().between(-1,1).all()
     assert all(json.loads(p.read_text())['requests']==8 for p in (tmp_path/'out').glob('*_audit.json'))
+    # Selected initial centroids and density parameters must reconstruct each export.
+    from porphyry.stability import make_refit
+    z,_=prepare(frame,cfg['units'])
+    for selected_path in (tmp_path/'out').glob('*_selected.json'):
+        name=selected_path.name.removesuffix('_selected.json')
+        selected=json.loads(selected_path.read_text())
+        reproduced=make_refit(name.split('_')[0],selected)(z)
+        exported=pd.read_csv(tmp_path/'out'/f'{name}_labels.csv').cluster.to_numpy()
+        assert partition_key(reproduced)==partition_key(exported)
+
 
 
 def test_selection_uses_shared_bounds_and_coverage_tie():
