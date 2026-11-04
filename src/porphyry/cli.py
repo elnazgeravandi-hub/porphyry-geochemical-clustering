@@ -9,8 +9,9 @@ import numpy as np
 import pandas as pd
 import scipy
 import sklearn
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, kmeans_plusplus
 from threadpoolctl import threadpool_limits
+from .environment import environment_manifest
 from .core import prepare, Evaluator, metrics, describe, violation, partition_key
 from .optimizers import initial_population, mopso, nsga2, fronts
 
@@ -50,7 +51,7 @@ def run(input_path,config_path,output):
     save(out/'preprocessing.json',preprocessing)
     save(out/'run_manifest.json',{'configuration':config,'input_sha256':hashlib.sha256(Path(input_path).read_bytes()).hexdigest(),
         'python':sys.version,'platform':platform.platform(),'numpy':np.__version__,'scipy':scipy.__version__,
-        'pandas':pd.__version__,'sklearn':sklearn.__version__,'thread_limit':1,
+        'pandas':pd.__version__,'sklearn':sklearn.__version__,'thread_limit':1,'installed_environment':environment_manifest(),
         'status':'REIMPLEMENTATION; manuscript output agreement not established'})
     summary=[]; audit=[]
     for method in config['methods']:
@@ -60,9 +61,17 @@ def run(input_path,config_path,output):
             base_ev=Evaluator(z,method,k,config['silhouette_subset_size'])
             for seed in (config['seeds'] if method=='kmeans' else [config['seeds'][0]]):
                 if method=='kmeans':
-                    fitted=KMeans(n_clusters=k,init='k-means++',n_init=config['baseline_n_init'],
-                        random_state=seed,max_iter=300,tol=1e-4,algorithm='lloyd').fit(z)
-                    labels=fitted.labels_; decoded=tuple(fitted.cluster_centers_.ravel())
+                    # Explicit 30-start baseline retains its selected *initial* centroids
+                    # for the manuscript's fixed-initialization subsampling assessment.
+                    baseline_rng=np.random.RandomState(seed)
+                    best_fit=None; best_initial=None
+                    for restart in range(config['baseline_n_init']):
+                        start=kmeans_plusplus(z,n_clusters=k,random_state=baseline_rng)[0]
+                        candidate=KMeans(n_clusters=k,init=start,n_init=1,random_state=seed,
+                            max_iter=300,tol=1e-4,algorithm='lloyd').fit(z)
+                        if best_fit is None or candidate.inertia_<best_fit.inertia_:
+                            best_fit=candidate;best_initial=start.copy()
+                    labels=best_fit.labels_; decoded=tuple(best_initial.ravel())
                 else:
                     decoded=(base_ev.baseline_radius,8); labels=base_ev.fit(decoded)
                 info=describe(labels); v=violation(info,method!='kmeans')

@@ -33,7 +33,7 @@ def capture(groups,domain,occurrences,budgets=(.05,.10,.20)):
     """
     from shapely import union_all, GeometryCollection
     if domain.is_empty or not domain.is_valid or domain.area<=0: raise ValueError('Invalid evaluation domain.')
-    points={point.wkb:point for point in occurrences if domain.covers(point)}
+    points={(float(point.x),float(point.y)):point for point in occurrences if domain.covers(point)}
     if not points: raise ValueError('No eligible unique occurrences inside domain.')
     combined={}
     for rank,geometries in groups:
