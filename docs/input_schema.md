@@ -24,3 +24,5 @@ Required fields: catchments_path, catchment_id_field, study_boundary_path, occur
 All sample IDs must link to catchments. Extra unlinked catchments do not enter the common domain. Multipart features for one sample are dissolved; clipped empty/invalid geometries fail explicitly. Occurrence points are deduplicated by exact XY coordinates in the evaluation CRS. Input records with no documented eligibility are not automatically assumed suitable.
 
 Store populated manifests, original records, GIS inputs and outputs under private_data/ or results/ locally. Public upload through the browser bypasses git-ignore selection rules; choose code/docs files only.
+
+Downstream reporting, stability and sensitivity require run_manifest.json and the exact processed-input artifact used by the model run (SHA-256 match). Changing numeric contents, row order or CSV serialization requires an explicit new model run; do not substitute a similarly named file.

@@ -1,5 +1,6 @@
-Version 0.3.0
-Final automated check: 20 passed, 0 failed, 0 skipped (11.16 seconds).
-Environment: Python 3.12; package versions in pyproject.toml and runtime metadata.
-Data: artificial test fixtures only.
-Manuscript numerical reproduction on restricted original inputs: NOT YET VERIFIED.
+Version 0.3.1
+Final automated verification: 30 passed, 0 failed, 0 skipped (15.75 seconds).
+Six optimizer/method tests ran exactly 416 evaluation requests each.
+Data: artificial fixtures only; no original geochemical or occurrence records.
+Exact manuscript numerical reproduction: NOT VERIFIED.
+Review scope: delivered local source, not a live remote repository inspection.
