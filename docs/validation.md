@@ -1,16 +1,19 @@
-# Development validation
+# Verification scope
 
-Automated checks use ephemeral artificial numerical fixtures, not manuscript data.
+Automated verification uses artificial numerical fixtures, not the restricted manuscript dataset.
 
-- clr/unit conversion equivalence and rejection of nonpositive values.
-- Label-permutation-invariant partition hashing and separate noise handling.
-- MOPSO and NSGA-II request accounting and feasible centroid partitions.
-- End-to-end execution across all nine configurations with explicitly reduced test budgets.
-- Shared-normalization selection and coverage tie-breaking.
-- PCA orientation and enrichment tie handling.
-- C-N rejection of spurious extra segments on an exact power-law fixture.
-- Spatial whole-tie/union test exists but is skipped without the optional Shapely dependency.
+Covered checks:
 
-Initial development test result: 8 passed, 1 skipped. Spatial integration, optional DBCV, full manuscript budgets and agreement with original numerical results are not validated by these tests.
+- clr unit-conversion/centering equivalence and invalid input rejection.
+- Label-permutation-invariant partitions, noise and ARI.
+- Request budgets and feasible optimizer results at reduced test budgets.
+- All nine configurations, DBCV, and regeneration of exported partitions from stored selected parameters/initial centroids.
+- Shared normalization and tie rules.
+- Oriented PCA, enrichment ties and C-N power-law model selection.
+- Profile median/IQR normalization and computed plots.
+- Spatial file loading, projected coordinates, sample-catchment links, complete tied group selection, union areas, occurrence deduplication and computed maps.
+- Independent upper-truncated mean implementation, observed-value preservation, invariance to hidden censored responses, nonconvergence diagnostics, explicit primary limits and native-unit preservation.
+- Training-only artificial-censoring comparisons and clr/PCA-Procrustes identity diagnostics.
+- Twenty fixed-parameter 80% subsamples.
 
-A numerical RSS floor at machine epsilon times max(centered response sum of squares, 1) prevents BIC favoring extra segments based solely on floating-point differences near exact fits. This is an explicit numerical implementation detail.
+The final test count/result is recorded in the delivered version's validation_result.txt. Results do not establish original-data agreement, laboratory coding validity, truth of natural censored observations, superiority of imputation or optimizers, or full-budget manuscript reproduction. Fixed-configuration sensitivity orchestration requires scientifically defined local scenarios; it is not asserted executed on the original data.

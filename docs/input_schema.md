@@ -1,17 +1,26 @@
-# Input contract
+# Private input specifications
 
-The CLI accepts a local CSV of **positive processed concentrations**, after verified censored-value treatment. It does not accept raw laboratory codes or infer censoring from small numerical values.
+## Concentration CSV
 
-| Column | Requirement |
-|---|---|
-| sample_id | Unique nonmissing string; preserve order |
-| Cu, Mo, Bi, Pb, Zn | Positive finite numeric concentrations, ppm |
-| Au | Positive finite numeric concentration, ppb |
+Unique nonempty sample_id, then Cu, Au, Mo, Bi, Pb, Zn. Au in ppb; other elements ppm. Measured cells must be positive and finite. A flagged censored cell's stored numeric placeholder is not used as a response. Unclassified missing/sentinel values cause an error, not an undocumented substitution or row filter. Sample order is preserved.
 
-Columns are selected explicitly in the order Cu, Au, Mo, Bi, Pb, Zn. Other columns are not predictors. No catchment concentration averaging, API feature or geographic coordinate enters clustering.
+## Censoring JSON
 
-Au is converted to ppm before clr. Fixed per-column unit conversion introduces a constant clr offset which cancels under column median centering; the equivalence is tested. Zero IQR is an explicit error, rather than an undocumented scale substitution.
+Private JSON fields:
 
-For eventual imputation integration, retain separate source-derived censoring flags and element-specific bounds (Au 5 ppb, Bi 0.1 ppm as stated by the author). Do not reconstruct these flags from already imputed values. Verified unflagged measurements must remain unchanged.
+- units: {"Cu":"ppm","Au":"ppb","Mo":"ppm","Bi":"ppm","Pb":"ppm","Zn":"ppm"}
+- documentation_basis: actual source/laboratory documentation supporting the flags.
+- scenario: primary_documented_bounds or assumption_based_sensitivity.
+- censored_cells: array of objects, each with sample_id, element, upper_bound.
 
-Each sample may be linked by sample_id to an upstream catchment. Catchments may overlap. Spatial assessment requires a documented projected area CRS, study boundary and eligible unique occurrence inventory. These are not required by the clustering CLI.
+Bounds use native units. In the primary manuscript scenario, only Au=5 ppb and Bi=0.1 ppm bounds are accepted. This check does not prove the supplied flags are laboratory-confirmed. Other thresholds must be labelled assumption-based sensitivity scenarios. No sentinel-code meaning or censoring flag is inferred from a repeated low number.
+
+Internally all ALR inputs use ppm. Output processed concentrations return to native units and unflagged native values are copied exactly. The common-unit change introduces a constant clr-coordinate offset which cancels after median centering. Its equivalence is tested.
+
+## Spatial JSON
+
+Required fields: catchments_path, catchment_id_field, study_boundary_path, occurrences_path, area_crs, occurrence_inventory_preverified, eligibility_description. Paths refer to local datasets, never public input downloads. Choose an appropriate projected CRS in metres for the study. Eligibility must be verified before setting occurrence_inventory_preverified=true; explain the actual coordinate/mineralization-type criteria.
+
+All sample IDs must link to catchments. Extra unlinked catchments do not enter the common domain. Multipart features for one sample are dissolved; clipped empty/invalid geometries fail explicitly. Occurrence points are deduplicated by exact XY coordinates in the evaluation CRS. Input records with no documented eligibility are not automatically assumed suitable.
+
+Store populated manifests, original records, GIS inputs and outputs under private_data/ or results/ locally. Public upload through the browser bypasses git-ignore selection rules; choose code/docs files only.

@@ -1,0 +1,9 @@
+Only if present in GitHub, remove these superseded documentation files after uploading the new documentation:
+docs/censoring_preparation.md
+docs/implementation_notes.md
+docs/reporting_spatial.md
+docs/github_upload_fa.md
+docs/manuscript_outputs.md
+docs/update_v02_fa.md
+
+Do not delete input_schema.md, python_dependencies.md or validation.md: these are replaced by their new versions.
