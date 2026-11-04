@@ -13,8 +13,9 @@ ELEMENTS = ['Cu', 'Au', 'Mo', 'Bi', 'Pb', 'Zn']
 def prepare(frame, units):
     if units != {'Cu':'ppm','Au':'ppb','Mo':'ppm','Bi':'ppm','Pb':'ppm','Zn':'ppm'}:
         raise ValueError('Expected declared units: Au ppb; other five elements ppm.')
-    if 'sample_id' not in frame or frame.sample_id.isna().any() or frame.sample_id.astype(str).duplicated().any():
+    if 'sample_id' not in frame or frame.sample_id.isna().any() or frame.sample_id.astype(str).str.strip().eq('').any() or frame.sample_id.astype(str).duplicated().any():
         raise ValueError('Unique, nonmissing sample_id required.')
+    if frame.columns.duplicated().any(): raise ValueError('Duplicate column names.')
     x = frame[ELEMENTS].to_numpy(dtype=float)
     if not np.isfinite(x).all() or (x <= 0).any():
         raise ValueError('Input must contain verified positive processed concentrations. No automatic replacement.')
@@ -46,7 +47,7 @@ def describe(labels):
     assigned=labels>=0
     _, counts=np.unique(labels[assigned],return_counts=True)
     return {'K':len(counts),'minimum_cluster_size':int(counts.min()) if len(counts) else 0,
-            'coverage':float(assigned.mean()),'noise_count':int((~assigned).sum()),
+            'coverage':float(assigned.mean()),'noise_fraction':float((~assigned).mean()),'noise_count':int((~assigned).sum()),
             'assigned_count':int(assigned.sum())}
 
 
@@ -74,6 +75,7 @@ def metrics(z, labels, subset=None, complementary=False):
 class Evaluator:
     def __init__(self,z,method,k=None,subset_size=600):
         self.z=z; self.method=method; self.k=k
+        if method not in {'kmeans','dbscan','optics'}: raise ValueError('Unknown clustering method.')
         self.subset=np.random.default_rng(2026).choice(len(z),min(subset_size,len(z)),replace=False)
         self.cache={}; self.partitions={}; self.orderings={}; self.requests=0; self.fits=0
         self.fit_seconds=0.; self.logs=[]

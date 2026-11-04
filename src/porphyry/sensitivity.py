@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from threadpoolctl import threadpool_limits
 from .reporting import read_indexed,load_labels
+from .integrity import verify_model_input
 from .preprocess import UNITS
 from .core import ELEMENTS,prepare,metrics,describe
 from .evaluation import agreement
@@ -21,7 +22,9 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--primary-input',required=True)
     parser.add_argument('--models',required=True);parser.add_argument('--scenarios',required=True)
     parser.add_argument('--output',required=True);parser.add_argument('--reoptimize-config')
-    args=parser.parse_args();primary=read_indexed(args.primary_input)[ELEMENTS]
+    args=parser.parse_args()
+    verify_model_input(args.primary_input,args.models)
+    primary=read_indexed(args.primary_input)[ELEMENTS]
     labels=load_labels(args.models,primary.index)
     scaler=json.loads((Path(args.models)/'preprocessing.json').read_text())
     specifications=json.loads(Path(args.scenarios).read_text())['scenarios']

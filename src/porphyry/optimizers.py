@@ -132,3 +132,22 @@ def nsga2(ev,initial,seed,generations=25):
                 selected.extend(sorted(front,key=lambda i:(-distances[i],i))[:size-len(selected)]); break
         pop=[combined[i] for i in selected]
     return [pop[i] for i in fronts(pop)[0] if pop[i]['v']==0]
+
+
+def objective_front(population):
+    """First nondominated front for finite, feasible two-objective records.
+
+    O(n log n), retaining identical objective vectors as separate candidates.
+    Evolutionary survival still uses the general feasibility-first front sorter.
+    """
+    indices=[i for i,p in enumerate(population) if p['v']==0 and np.isfinite(p['f']).all()]
+    order=sorted(indices,key=lambda i:(population[i]['f'][0],population[i]['f'][1],i))
+    result=[];best_second=np.inf;position=0
+    while position<len(order):
+        stop=position+1;first=population[order[position]]['f'][0]
+        while stop<len(order) and population[order[stop]]['f'][0]==first:stop+=1
+        group=order[position:stop];minimum=population[group[0]]['f'][1]
+        if minimum<best_second:
+            result.extend(i for i in group if population[i]['f'][1]==minimum)
+        best_second=min(best_second,minimum);position=stop
+    return result

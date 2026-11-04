@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from .environment import environment_manifest
+from .integrity import verify_model_input
 from .core import ELEMENTS,prepare
 from .references import enrichment,pca_reference,cn_reference
 from .evaluation import capture
@@ -125,12 +126,14 @@ def read_spatial(config_path,index):
     basins=basins.dissolve(by=id_field).loc[index]
     roi=union_all(boundary.geometry.to_numpy())
     basins.geometry=basins.geometry.intersection(roi)
-    if basins.geometry.is_empty.any() or not basins.geometry.is_valid.all():raise ValueError('Invalid or empty clipped linked catchment.')
+    if basins.geometry.is_empty.any() or not basins.geometry.is_valid.all() or (basins.geometry.area<=0).any():raise ValueError('Invalid or empty clipped linked catchment.')
     domain=union_all(basins.geometry.to_numpy())
     return basins,domain,list(points.geometry),config
 
 
 def spatial_assessment(scores,models,basins,domain,points):
+    if not scores.index.equals(basins.index):raise ValueError('Score and catchment ID order differs; align explicitly before evaluation.')
+    if any(len(labels)!=len(scores) for labels in models.values()):raise ValueError('Label count differs from spatial sample count.')
     rows=[]; all_results={}
     for name in list(models)+['pca','cn']:
         if name in models:
@@ -177,7 +180,9 @@ def main():
     parser=argparse.ArgumentParser(description='Local computed profiles/reference plots and optional spatial capture.')
     parser.add_argument('--input',required=True);parser.add_argument('--labels-dir',required=True)
     parser.add_argument('--output',required=True);parser.add_argument('--spatial-config')
-    args=parser.parse_args();concentrations=read_indexed(args.input)[ELEMENTS]
+    args=parser.parse_args()
+    verify_model_input(args.input,args.labels_dir)
+    concentrations=read_indexed(args.input)[ELEMENTS]
     z,scaler=prepare(concentrations.reset_index(),UNITS)
     models=load_labels(args.labels_dir,concentrations.index)
     out=Path(args.output);out.mkdir(parents=True,exist_ok=False)

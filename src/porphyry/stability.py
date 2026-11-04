@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans,DBSCAN,OPTICS,cluster_optics_dbscan
 from .reporting import read_indexed,load_labels
+from .integrity import verify_model_input
 from .core import ELEMENTS
 from .evaluation import sampling_stability
 
@@ -26,7 +27,9 @@ def make_refit(method,selected):
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--input',required=True)
     parser.add_argument('--models',required=True);parser.add_argument('--output',required=True)
-    args=parser.parse_args();raw=read_indexed(args.input)[ELEMENTS]
+    args=parser.parse_args()
+    verify_model_input(args.input,args.models)
+    raw=read_indexed(args.input)[ELEMENTS]
     models=Path(args.models);parameters=json.loads((models/'preprocessing.json').read_text())
     if parameters['elements']!=ELEMENTS:raise ValueError('Feature-order mismatch.')
     x=raw.to_numpy(float).copy();x[:,1]/=1000
